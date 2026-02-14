@@ -15,18 +15,25 @@ import { AudioToPhoto } from './components/AudioToPhoto';
 import { AudioToVideo } from './components/AudioToVideo';
 import { Notifications } from './components/Notifications';
 import { Navigation } from './components/Navigation';
+import { Canva } from './components/Canva';
 
 const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
+    const [externalData, setExternalData] = useState<any>(null);
+
+    const handleNavigateWithData = (view: AppView, data?: any) => {
+        if (data) setExternalData(data);
+        setCurrentView(view);
+    };
 
     const renderView = () => {
         switch (currentView) {
-            case AppView.DASHBOARD: return <Dashboard onNavigate={setCurrentView} />;
+            case AppView.DASHBOARD: return <Dashboard onNavigate={handleNavigateWithData} />;
             case AppView.HISTORY: return <History />;
             case AppView.AR_HISTORY: return <ARHistory />;
             case AppView.PERSONA: return <Persona />;
             case AppView.CHAT: return <Chat />;
-            case AppView.WRITING: return <Writing />;
+            case AppView.WRITING: return <Writing onOpenCanva={(data) => handleNavigateWithData(AppView.CANVA, data)} />;
             case AppView.ANALYSIS: return <Analysis />;
             case AppView.IMAGE_GEN: return <ImageGen onBack={() => setCurrentView(AppView.DASHBOARD)} />;
             case AppView.VIDEO_GEN: return <VideoGen onBack={() => setCurrentView(AppView.DASHBOARD)} />;
@@ -34,7 +41,8 @@ const App: React.FC = () => {
             case AppView.AUDIO_TO_VIDEO: return <AudioToVideo onBack={() => setCurrentView(AppView.DASHBOARD)} />;
             case AppView.VISION: return <Vision onBack={() => setCurrentView(AppView.DASHBOARD)} />;
             case AppView.NOTIFICATIONS: return <Notifications onBack={() => setCurrentView(AppView.DASHBOARD)} />;
-            default: return <Dashboard onNavigate={setCurrentView} />;
+            case AppView.CANVA: return <Canva initialData={externalData} onBack={() => setCurrentView(AppView.WRITING)} />;
+            default: return <Dashboard onNavigate={handleNavigateWithData} />;
         }
     };
 
@@ -43,7 +51,7 @@ const App: React.FC = () => {
             <main className="flex-1 overflow-y-auto custom-scrollbar">
                 {renderView()}
             </main>
-            {currentView !== AppView.VISION && (
+            {currentView !== AppView.VISION && currentView !== AppView.CANVA && (
                 <Navigation currentView={currentView} onNavigate={setCurrentView} />
             )}
         </div>

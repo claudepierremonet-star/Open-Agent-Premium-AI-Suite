@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
 
 interface DashboardProps {
-    onNavigate: (view: AppView) => void;
+    onNavigate: (view: AppView, data?: any) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
@@ -23,17 +23,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             view: AppView.VISION, 
             color: 'text-primary', 
             bg: 'bg-primary/5', 
-            border: 'border-primary/20',
-            hover: 'hover:bg-primary hover:text-white'
+            border: 'border-primary/20'
         },
         { 
-            label: 'Cinematics', 
-            icon: 'movie_edit', 
-            view: AppView.VIDEO_GEN, 
-            color: 'text-blue-500', 
-            bg: 'bg-blue-50', 
-            border: 'border-blue-200',
-            hover: 'hover:bg-blue-500 hover:text-white'
+            label: 'Canva Studio', 
+            icon: 'brush', 
+            view: AppView.CANVA, 
+            color: 'text-cyan-500', 
+            bg: 'bg-cyan-50', 
+            border: 'border-cyan-200'
         },
         { 
             label: 'Generative', 
@@ -41,8 +39,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             view: AppView.IMAGE_GEN, 
             color: 'text-purple-500', 
             bg: 'bg-purple-50', 
-            border: 'border-purple-200',
-            hover: 'hover:bg-purple-500 hover:text-white'
+            border: 'border-purple-200'
         },
         { 
             label: 'Intelligence', 
@@ -50,8 +47,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             view: AppView.ANALYSIS, 
             color: 'text-emerald-600', 
             bg: 'bg-emerald-50', 
-            border: 'border-emerald-200',
-            hover: 'hover:bg-emerald-600 hover:text-white'
+            border: 'border-emerald-200'
         }
     ];
 
@@ -95,7 +91,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     className="group relative w-full h-28 bg-graphite text-white rounded-[2rem] overflow-hidden shadow-2xl transition-all hover:translate-y-[-4px] active:scale-[0.98] border-b-8 border-primary/30"
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-transparent to-primary/10 opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                    <div className="absolute top-0 left-0 w-2 h-full bg-primary shadow-[2px_0_15px_rgba(255,79,0,0.5)]"></div>
                     <div className="relative h-full px-10 flex items-center justify-between">
                         <div className="text-left">
                             <span className="block text-[11px] font-black uppercase tracking-[0.4em] text-primary mb-1">Neural Core v4.1</span>
@@ -107,7 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     </div>
                 </button>
 
-                {/* Modules Grid - Colorful Buttons */}
+                {/* Modules Grid */}
                 <section className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-graphite/40">Modules de Commande</h3>
@@ -124,23 +119,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                                     <span className={`material-symbols-outlined ${mod.color} text-3xl font-bold`}>{mod.icon}</span>
                                 </div>
                                 <span className={`text-[12px] font-black uppercase tracking-widest ${mod.color}`}>{mod.label}</span>
-                                <div className={`absolute bottom-0 right-0 p-2 opacity-5 group-hover:opacity-20 transition-opacity`}>
-                                     <span className="material-symbols-outlined text-6xl">{mod.icon}</span>
-                                </div>
                             </button>
                         ))}
                     </div>
                 </section>
 
-                {/* Secondary Actions - More Visible */}
+                {/* Secondary Actions */}
                 <div className="grid grid-cols-2 gap-4">
-                    <button 
-                        onClick={() => onNavigate(AppView.AUDIO_TO_VIDEO)}
-                        className="p-5 bg-amber-50 border-2 border-amber-200 rounded-3xl flex flex-col items-center gap-2 hover:bg-amber-500 hover:text-white transition-all shadow-md group"
-                    >
-                        <span className="material-symbols-outlined text-amber-500 text-3xl font-bold group-hover:text-white">settings_voice</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Audio to Vid</span>
-                    </button>
                     <button 
                         onClick={() => onNavigate(AppView.WRITING)}
                         className="p-5 bg-indigo-50 border-2 border-indigo-200 rounded-3xl flex flex-col items-center gap-2 hover:bg-indigo-600 hover:text-white transition-all shadow-md group"
@@ -148,12 +133,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                         <span className="material-symbols-outlined text-indigo-600 text-3xl font-bold group-hover:text-white">edit_note</span>
                         <span className="text-[10px] font-black uppercase tracking-widest">Write Flow</span>
                     </button>
+                    <button 
+                        onClick={() => onNavigate(AppView.VIDEO_GEN)}
+                        className="p-5 bg-amber-50 border-2 border-amber-200 rounded-3xl flex flex-col items-center gap-2 hover:bg-amber-500 hover:text-white transition-all shadow-md group"
+                    >
+                        <span className="material-symbols-outlined text-amber-500 text-3xl font-bold group-hover:text-white">movie</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Cinema Studio</span>
+                    </button>
                 </div>
-            </div>
-
-            {/* Footer Tag */}
-            <div className="px-6 py-6 flex justify-center bg-white/50 border-t border-intl-border">
-                <span className="text-[9px] font-black uppercase tracking-[0.5em] text-graphite/20">Premium Intelligence Platform v4.1</span>
             </div>
         </div>
     );

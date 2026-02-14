@@ -12,7 +12,8 @@ export enum AppView {
     VIDEO_GEN = 'VIDEO_GEN',
     AUDIO_TO_PHOTO = 'AUDIO_TO_PHOTO',
     AUDIO_TO_VIDEO = 'AUDIO_TO_VIDEO',
-    NOTIFICATIONS = 'NOTIFICATIONS'
+    NOTIFICATIONS = 'NOTIFICATIONS',
+    CANVA = 'CANVA'
 }
 
 export interface NewsItem {
