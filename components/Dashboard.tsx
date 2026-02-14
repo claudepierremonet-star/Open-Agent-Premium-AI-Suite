@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
 
 interface DashboardProps {
@@ -7,102 +7,154 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
+    const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const modules = [
+        { 
+            label: 'Vision AR', 
+            icon: 'center_focus_strong', 
+            view: AppView.VISION, 
+            color: 'text-primary', 
+            bg: 'bg-primary/5', 
+            border: 'border-primary/20',
+            hover: 'hover:bg-primary hover:text-white'
+        },
+        { 
+            label: 'Cinematics', 
+            icon: 'movie_edit', 
+            view: AppView.VIDEO_GEN, 
+            color: 'text-blue-500', 
+            bg: 'bg-blue-50', 
+            border: 'border-blue-200',
+            hover: 'hover:bg-blue-500 hover:text-white'
+        },
+        { 
+            label: 'Generative', 
+            icon: 'auto_awesome_motion', 
+            view: AppView.IMAGE_GEN, 
+            color: 'text-purple-500', 
+            bg: 'bg-purple-50', 
+            border: 'border-purple-200',
+            hover: 'hover:bg-purple-500 hover:text-white'
+        },
+        { 
+            label: 'Intelligence', 
+            icon: 'analytics', 
+            view: AppView.ANALYSIS, 
+            color: 'text-emerald-600', 
+            bg: 'bg-emerald-50', 
+            border: 'border-emerald-200',
+            hover: 'hover:bg-emerald-600 hover:text-white'
+        }
+    ];
+
     return (
-        <div className="p-6 space-y-8 pb-10">
-            {/* Header */}
-            <header className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-full bg-primary/20 border border-primary/30 overflow-hidden">
-                        <img className="w-full h-full object-cover" src="https://picsum.photos/100/100?random=1" alt="Profile" />
-                    </div>
-                    <div>
-                        <h1 className="text-lg font-bold leading-none">Hi, Open Agent</h1>
-                        <p className="text-[10px] text-primary/70 font-semibold uppercase mt-1">Pro Plan Active</p>
+        <div className="min-h-full bg-stellar flex flex-col animate-in fade-in duration-700">
+            {/* System Status Bar */}
+            <div className="px-6 pt-4 pb-2 flex justify-between items-center border-b border-intl-border/50 bg-white/50 backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                    <div className="size-2 bg-primary rounded-full animate-pulse shadow-[0_0_8px_#FF4F00]"></div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-graphite/60">System Ready</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-black text-graphite/80">{currentTime}</span>
+                    <div className="flex gap-1">
+                        <div className="w-3 h-1 bg-primary/20 rounded-full"></div>
+                        <div className="w-6 h-1 bg-primary rounded-full shadow-[0_0_5px_#FF4F00]"></div>
                     </div>
                 </div>
+            </div>
+
+            <div className="p-6 space-y-8 flex-1 overflow-y-auto custom-scrollbar">
+                {/* Brand Header */}
+                <header className="flex justify-between items-start py-2">
+                    <div className="space-y-1">
+                        <h1 className="text-5xl font-black text-graphite tracking-tighter leading-[0.85]">
+                            OPEN<br/>AGENT<span className="text-primary">.</span>
+                        </h1>
+                        <p className="text-[11px] font-black text-primary uppercase tracking-[0.4em] mt-2">Premium AI Suite</p>
+                    </div>
+                    <button 
+                        onClick={() => onNavigate(AppView.NOTIFICATIONS)}
+                        className="size-14 rounded-2xl bg-white border-2 border-intl-border shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-primary"
+                    >
+                        <span className="material-symbols-outlined text-3xl font-bold">notifications_active</span>
+                    </button>
+                </header>
+
+                {/* Primary Action - Ultra Visible */}
                 <button 
-                    onClick={() => onNavigate(AppView.NOTIFICATIONS)}
-                    className="size-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 relative group hover:bg-white/10 transition-all"
+                    onClick={() => onNavigate(AppView.CHAT)}
+                    className="group relative w-full h-28 bg-graphite text-white rounded-[2rem] overflow-hidden shadow-2xl transition-all hover:translate-y-[-4px] active:scale-[0.98] border-b-8 border-primary/30"
                 >
-                    <span className="material-symbols-outlined text-white/70">notifications</span>
-                    {/* Pulsating Notification Badge */}
-                    <span className="absolute top-2 right-2 size-2.5 bg-red-500 rounded-full border-2 border-background-dark animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-transparent to-primary/10 opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                    <div className="absolute top-0 left-0 w-2 h-full bg-primary shadow-[2px_0_15px_rgba(255,79,0,0.5)]"></div>
+                    <div className="relative h-full px-10 flex items-center justify-between">
+                        <div className="text-left">
+                            <span className="block text-[11px] font-black uppercase tracking-[0.4em] text-primary mb-1">Neural Core v4.1</span>
+                            <span className="text-2xl font-black tracking-tighter uppercase">Démarrer Session</span>
+                        </div>
+                        <div className="size-14 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-primary transition-colors shadow-inner">
+                            <span className="material-symbols-outlined text-4xl text-white">bolt</span>
+                        </div>
+                    </div>
                 </button>
-            </header>
 
-            {/* CTA */}
-            <button 
-                onClick={() => onNavigate(AppView.CHAT)}
-                className="w-full h-14 bg-primary text-white rounded-xl font-bold text-lg shadow-neon flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-            >
-                <span className="material-symbols-outlined">add_circle</span>
-                New Chat
-            </button>
-
-            {/* Pinned Contexts */}
-            <section>
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-white/40 text-[11px] font-bold uppercase tracking-[0.2em]">Quick Actions</h3>
-                    <span className="material-symbols-outlined text-white/20 text-sm">more_horiz</span>
-                </div>
-                <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-2">
-                    {[
-                        { label: 'Audio2Video', icon: 'video_stable', view: AppView.AUDIO_TO_VIDEO },
-                        { label: 'Audio2Photo', icon: 'graphic_eq', view: AppView.AUDIO_TO_PHOTO },
-                        { label: 'Video AI', icon: 'movie_filter', view: AppView.VIDEO_GEN },
-                        { label: 'Photo AI', icon: 'photo_library', view: AppView.IMAGE_GEN },
-                        { label: 'Code', icon: 'code', view: AppView.CHAT }
-                    ].map((ctx) => (
-                        <div key={ctx.label} className="flex flex-col items-center gap-2 shrink-0">
-                            <div 
-                                onClick={() => onNavigate(ctx.view)}
-                                className="size-14 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group hover:border-primary/50 transition-colors cursor-pointer"
+                {/* Modules Grid - Colorful Buttons */}
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between px-1">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-graphite/40">Modules de Commande</h3>
+                        <div className="h-[2px] flex-1 bg-intl-border mx-4"></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        {modules.map((mod) => (
+                            <button 
+                                key={mod.label}
+                                onClick={() => onNavigate(mod.view)}
+                                className={`flex flex-col items-start p-6 ${mod.bg} border-2 ${mod.border} rounded-[2.5rem] shadow-lg transition-all active:scale-95 group relative overflow-hidden`}
                             >
-                                <span className="material-symbols-outlined text-[28px] text-primary/80 group-hover:text-primary">
-                                    {ctx.icon}
-                                </span>
-                            </div>
-                            <span className="text-[10px] text-white/60 font-medium">{ctx.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* Recent Chats (including Pinned ones) */}
-            <section>
-                <h3 className="text-white/40 text-[11px] font-bold uppercase tracking-[0.2em] mb-4">Chat History</h3>
-                <div className="space-y-3">
-                    {[
-                        { title: 'React Component Opt...', desc: 'Can you refactor this hook...', time: '2m ago', icon: 'terminal', color: 'text-primary', isPinned: true },
-                        { title: 'Marketing Copy - V2', desc: 'Here is a revised version...', time: '1h ago', icon: 'description', color: 'text-emerald-400', isPinned: false },
-                        { title: 'Q3 Revenue Breakdown', desc: 'Based on the uploaded CSV...', time: 'Yesterday', icon: 'query_stats', color: 'text-amber-400', isPinned: false }
-                    ].map((chat, idx) => (
-                        <div 
-                            key={idx}
-                            onClick={() => onNavigate(AppView.CHAT)}
-                            className={`p-4 rounded-xl border flex gap-4 cursor-pointer transition-all ${chat.isPinned ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
-                        >
-                            <div className={`size-10 rounded-full flex items-center justify-center shrink-0 bg-white/5 ${chat.color} relative`}>
-                                <span className="material-symbols-outlined">{chat.icon}</span>
-                                {chat.isPinned && (
-                                    <div className="absolute -top-1 -right-1 size-4 bg-primary rounded-full flex items-center justify-center border-2 border-background-dark">
-                                        <span className="material-symbols-outlined text-[8px] text-white fill-1">push_pin</span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start mb-1">
-                                    <h4 className="text-sm font-semibold truncate flex items-center gap-1.5">
-                                        {chat.title}
-                                    </h4>
-                                    <span className="text-[10px] text-white/30">{chat.time}</span>
+                                <div className={`size-12 rounded-2xl bg-white shadow-md flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                                    <span className={`material-symbols-outlined ${mod.color} text-3xl font-bold`}>{mod.icon}</span>
                                 </div>
-                                <p className="text-xs text-white/40 truncate">{chat.desc}</p>
-                            </div>
-                        </div>
-                    ))}
+                                <span className={`text-[12px] font-black uppercase tracking-widest ${mod.color}`}>{mod.label}</span>
+                                <div className={`absolute bottom-0 right-0 p-2 opacity-5 group-hover:opacity-20 transition-opacity`}>
+                                     <span className="material-symbols-outlined text-6xl">{mod.icon}</span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Secondary Actions - More Visible */}
+                <div className="grid grid-cols-2 gap-4">
+                    <button 
+                        onClick={() => onNavigate(AppView.AUDIO_TO_VIDEO)}
+                        className="p-5 bg-amber-50 border-2 border-amber-200 rounded-3xl flex flex-col items-center gap-2 hover:bg-amber-500 hover:text-white transition-all shadow-md group"
+                    >
+                        <span className="material-symbols-outlined text-amber-500 text-3xl font-bold group-hover:text-white">settings_voice</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Audio to Vid</span>
+                    </button>
+                    <button 
+                        onClick={() => onNavigate(AppView.WRITING)}
+                        className="p-5 bg-indigo-50 border-2 border-indigo-200 rounded-3xl flex flex-col items-center gap-2 hover:bg-indigo-600 hover:text-white transition-all shadow-md group"
+                    >
+                        <span className="material-symbols-outlined text-indigo-600 text-3xl font-bold group-hover:text-white">edit_note</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Write Flow</span>
+                    </button>
                 </div>
-            </section>
+            </div>
+
+            {/* Footer Tag */}
+            <div className="px-6 py-6 flex justify-center bg-white/50 border-t border-intl-border">
+                <span className="text-[9px] font-black uppercase tracking-[0.5em] text-graphite/20">Premium Intelligence Platform v4.1</span>
+            </div>
         </div>
     );
 };

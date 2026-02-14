@@ -75,7 +75,7 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
                 translated: d.translated,
                 lang: targetLang,
                 timestamp: new Date().toISOString(),
-                image: thumbnail, // Sauvegarde de la vignette
+                image: thumbnail,
                 location: {
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude
@@ -84,7 +84,6 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
             history = [...newItems, ...history].slice(0, 50);
             localStorage.setItem('openagent_ar_history', JSON.stringify(history));
         }, () => {
-            // Fallback sans GPS
             const stored = localStorage.getItem('openagent_ar_history');
             let history = stored ? JSON.parse(stored) : [];
             const newItems = newDetections.map(d => ({
@@ -112,7 +111,6 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
         canvas.height = videoRef.current.videoHeight;
         context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         
-        // Création d'une vignette plus petite pour le stockage
         const thumbCanvas = document.createElement('canvas');
         thumbCanvas.width = 150;
         thumbCanvas.height = 100;
@@ -129,7 +127,7 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
                     {
                         parts: [
                             { inlineData: { data: base64Image, mimeType: 'image/jpeg' } },
-                            { text: `Detect all visible text blocks. Provide the original text and its accurate translation into ${targetLang}. For Chinese, ensure high precision in character recognition. Also provide the bounding box [ymin, xmin, ymax, xmax] scaled 0-1000. Return as a JSON array.` }
+                            { text: `Détecte tous les blocs de texte. Traduis-les en ${targetLang}. Retourne uniquement un JSON array avec original, translated et box [ymin, xmin, ymax, xmax] (0-1000).` }
                         ]
                     }
                 ],
@@ -160,7 +158,6 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
         }
     }, [mode, isScanning, targetLang, saveTranslationToHistory]);
 
-    // Loop for translation scans
     useEffect(() => {
         let interval: number;
         if (mode === 'translate') {
@@ -183,12 +180,12 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
                     ref={videoRef} 
                     autoPlay 
                     playsInline 
-                    className="w-full h-full object-cover opacity-80"
+                    className="w-full h-full object-cover opacity-90"
                 />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)] pointer-events-none"></div>
             </div>
 
-            {/* AR Overlays */}
+            {/* AR Overlays Haute Visibilité */}
             {mode === 'translate' && (
                 <div className="absolute inset-0 z-10 pointer-events-none">
                     {detections.map((det, i) => {
@@ -196,51 +193,88 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
                         return (
                             <div 
                                 key={i}
-                                className="absolute border border-primary/50 bg-primary/20 backdrop-blur-md rounded px-2 py-1 flex flex-col transition-all duration-500 shadow-neon"
+                                className="absolute bg-white border-2 border-primary rounded-xl px-3 py-2 flex flex-col transition-all duration-700 shadow-2xl animate-in zoom-in-50"
                                 style={{
                                     top: `${ymin / 10}%`,
                                     left: `${xmin / 10}%`,
                                     width: `${(xmax - xmin) / 10}%`,
                                     height: `${(ymax - ymin) / 10}%`,
-                                    minWidth: '70px'
+                                    minWidth: '100px',
+                                    maxWidth: '250px'
                                 }}
                             >
-                                <span className="text-[7px] text-white/40 uppercase font-black truncate">{det.original}</span>
-                                <span className="text-[11px] text-white font-bold leading-tight drop-shadow-md">{det.translated}</span>
+                                <span className="text-[8px] text-graphite/40 uppercase font-black tracking-widest mb-1 truncate">{det.original}</span>
+                                <span className="text-[13px] text-graphite font-black leading-tight break-words uppercase">{det.translated}</span>
+                                <div className="absolute -bottom-1.5 left-4 size-3 bg-white border-b-2 border-r-2 border-primary rotate-45"></div>
                             </div>
                         );
                     })}
                 </div>
             )}
 
-            {/* Header */}
-            <header className="relative z-20 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
-                <button onClick={onBack} className="size-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center border border-white/10">
-                    <span className="material-symbols-outlined">close</span>
+            {/* Header Haute Visibilité */}
+            <header className="relative z-40 p-6 flex items-center justify-between bg-gradient-to-b from-white/90 to-transparent backdrop-blur-[2px]">
+                <button 
+                    onClick={onBack} 
+                    className="size-12 rounded-2xl bg-white border-2 border-intl-border shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-graphite"
+                >
+                    <span className="material-symbols-outlined text-3xl font-bold">arrow_back</span>
                 </button>
+                <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border-2 border-primary/20 text-primary">
+                        <span className="size-2 rounded-full bg-primary animate-pulse"></span>
+                        <span className="text-[9px] font-black uppercase tracking-widest">Vision AR Acticve</span>
+                    </div>
+                </div>
             </header>
 
-            {/* Viewfinder */}
+            {/* Viewfinder Stylisé */}
             <div className="relative flex-1 flex items-center justify-center pointer-events-none">
-                <div className={`size-64 border border-white/10 rounded-3xl transition-all duration-700 relative ${isScanning ? 'scale-90 border-primary/50' : 'scale-100'}`}>
-                    <div className="absolute -top-1 -left-1 size-12 border-t-2 border-l-2 border-primary rounded-tl-2xl shadow-neon"></div>
-                    <div className="absolute -bottom-1 -right-1 size-12 border-b-2 border-r-2 border-primary rounded-br-2xl shadow-neon"></div>
-                    {isScanning && <div className="absolute top-0 left-0 w-full h-0.5 bg-primary shadow-neon animate-[scan-line_2s_ease-in-out_infinite]"></div>}
+                <div className={`size-72 border-2 border-white/20 rounded-[3rem] transition-all duration-1000 relative ${isScanning ? 'scale-90 border-primary/40 bg-primary/5 shadow-[0_0_100px_rgba(255,79,0,0.1)]' : 'scale-100'}`}>
+                    <div className="absolute -top-1 -left-1 size-16 border-t-4 border-l-4 border-primary rounded-tl-[2.5rem] shadow-[0_0_20px_rgba(255,79,0,0.3)]"></div>
+                    <div className="absolute -bottom-1 -right-1 size-16 border-b-4 border-r-4 border-primary rounded-br-[2.5rem] shadow-[0_0_20px_rgba(255,79,0,0.3)]"></div>
+                    
+                    {isScanning && (
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_25px_#FF4F00] animate-[scan-line_2.5s_ease-in-out_infinite]"></div>
+                    )}
+
+                    {isScanning && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] font-black uppercase tracking-[0.5em] text-primary animate-pulse">Scanning Intelligence...</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Mode Switcher */}
-            <div className="relative z-30 p-6 bg-gradient-to-t from-black to-transparent">
-                <div className="flex bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-1 mb-6">
-                    <button onClick={() => setMode('identify')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'identify' ? 'bg-primary text-white shadow-neon' : 'text-white/30'}`}>Identify</button>
-                    <button onClick={() => setMode('translate')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'translate' ? 'bg-primary text-white shadow-neon' : 'text-white/30'}`}>Translate</button>
+            {/* Controls Hub Haute Visibilité */}
+            <div className="relative z-40 p-8 bg-white border-t-4 border-primary/20 rounded-t-[3rem] shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
+                {/* Mode Selector */}
+                <div className="flex bg-stellar border-2 border-intl-border rounded-[2rem] p-1.5 mb-8 shadow-inner">
+                    <button 
+                        onClick={() => setMode('identify')} 
+                        className={`flex-1 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all ${mode === 'identify' ? 'bg-primary text-white shadow-xl scale-[1.02]' : 'text-graphite/40 hover:text-graphite hover:bg-white'}`}
+                    >
+                        Identifier
+                    </button>
+                    <button 
+                        onClick={() => setMode('translate')} 
+                        className={`flex-1 py-4 rounded-[1.8rem] text-[11px] font-black uppercase tracking-widest transition-all ${mode === 'translate' ? 'bg-primary text-white shadow-xl scale-[1.02]' : 'text-graphite/40 hover:text-graphite hover:bg-white'}`}
+                    >
+                        Traduire
+                    </button>
                 </div>
                 
+                {/* Language Selector Pills */}
                 {mode === 'translate' && (
-                    <div className="flex gap-2 overflow-x-auto pb-4 custom-scrollbar no-scrollbar">
+                    <div className="flex gap-3 overflow-x-auto pb-6 custom-scrollbar no-scrollbar mask-fade-edges">
                         {LANGUAGES.map(lang => (
-                            <button key={lang.code} onClick={() => setTargetLang(lang.code)} className={`px-4 py-2 rounded-xl text-[9px] font-bold border whitespace-nowrap transition-all ${targetLang === lang.code ? 'bg-primary border-primary shadow-neon' : 'bg-white/5 border-white/10 text-white/40'}`}>
-                                {lang.flag} {lang.label}
+                            <button 
+                                key={lang.code} 
+                                onClick={() => setTargetLang(lang.code)} 
+                                className={`px-6 py-3.5 rounded-2xl text-[10px] font-black border-2 whitespace-nowrap transition-all shadow-sm flex items-center gap-3 ${targetLang === lang.code ? 'bg-graphite border-graphite text-white scale-110 shadow-xl' : 'bg-white border-intl-border text-graphite/40 hover:border-graphite/20'}`}
+                            >
+                                <span className="text-lg">{lang.flag}</span>
+                                <span className="uppercase tracking-widest">{lang.label}</span>
                             </button>
                         ))}
                     </div>
@@ -249,12 +283,16 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
 
             <style>{`
                 @keyframes scan-line {
-                    0% { top: 0; opacity: 0; }
-                    5% { opacity: 1; }
-                    95% { opacity: 1; }
-                    100% { top: 100%; opacity: 0; }
+                    0% { top: 0; opacity: 0; transform: scaleX(0.5); }
+                    15% { opacity: 1; transform: scaleX(1); }
+                    85% { opacity: 1; transform: scaleX(1); }
+                    100% { top: 100%; opacity: 0; transform: scaleX(0.5); }
                 }
                 .no-scrollbar::-webkit-scrollbar { display: none; }
+                .mask-fade-edges {
+                    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+                    -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+                }
             `}</style>
         </div>
     );

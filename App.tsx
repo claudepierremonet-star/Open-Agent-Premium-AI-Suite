@@ -21,48 +21,29 @@ const App: React.FC = () => {
 
     const renderView = () => {
         switch (currentView) {
-            case AppView.DASHBOARD:
-                return <Dashboard onNavigate={setCurrentView} />;
-            case AppView.HISTORY:
-                return <History />;
-            case AppView.AR_HISTORY:
-                return <ARHistory />;
-            case AppView.PERSONA:
-                return <Persona />;
-            case AppView.CHAT:
-                return <Chat />;
-            case AppView.WRITING:
-                return <Writing />;
-            case AppView.ANALYSIS:
-                return <Analysis />;
-            case AppView.IMAGE_GEN:
-                return <ImageGen onBack={() => setCurrentView(AppView.DASHBOARD)} />;
-            case AppView.VIDEO_GEN:
-                return <VideoGen onBack={() => setCurrentView(AppView.DASHBOARD)} />;
-            case AppView.AUDIO_TO_PHOTO:
-                return <AudioToPhoto onBack={() => setCurrentView(AppView.DASHBOARD)} />;
-            case AppView.AUDIO_TO_VIDEO:
-                return <AudioToVideo onBack={() => setCurrentView(AppView.DASHBOARD)} />;
-            case AppView.VISION:
-                return <Vision onBack={() => setCurrentView(AppView.DASHBOARD)} />;
-            case AppView.NOTIFICATIONS:
-                return <Notifications onBack={() => setCurrentView(AppView.DASHBOARD)} />;
-            default:
-                return <Dashboard onNavigate={setCurrentView} />;
+            case AppView.DASHBOARD: return <Dashboard onNavigate={setCurrentView} />;
+            case AppView.HISTORY: return <History />;
+            case AppView.AR_HISTORY: return <ARHistory />;
+            case AppView.PERSONA: return <Persona />;
+            case AppView.CHAT: return <Chat />;
+            case AppView.WRITING: return <Writing />;
+            case AppView.ANALYSIS: return <Analysis />;
+            case AppView.IMAGE_GEN: return <ImageGen onBack={() => setCurrentView(AppView.DASHBOARD)} />;
+            case AppView.VIDEO_GEN: return <VideoGen onBack={() => setCurrentView(AppView.DASHBOARD)} />;
+            case AppView.AUDIO_TO_PHOTO: return <AudioToPhoto onBack={() => setCurrentView(AppView.DASHBOARD)} />;
+            case AppView.AUDIO_TO_VIDEO: return <AudioToVideo onBack={() => setCurrentView(AppView.DASHBOARD)} />;
+            case AppView.VISION: return <Vision onBack={() => setCurrentView(AppView.DASHBOARD)} />;
+            case AppView.NOTIFICATIONS: return <Notifications onBack={() => setCurrentView(AppView.DASHBOARD)} />;
+            default: return <Dashboard onNavigate={setCurrentView} />;
         }
     };
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-background-dark text-white max-w-md mx-auto relative border-x border-white/5">
+        <div className="flex flex-col h-screen overflow-hidden bg-stellar text-graphite max-w-md mx-auto relative border-x border-intl-border shadow-2xl">
             <main className="flex-1 overflow-y-auto custom-scrollbar">
                 {renderView()}
             </main>
-            {currentView !== AppView.VISION && 
-             currentView !== AppView.IMAGE_GEN && 
-             currentView !== AppView.VIDEO_GEN && 
-             currentView !== AppView.AUDIO_TO_PHOTO && 
-             currentView !== AppView.AUDIO_TO_VIDEO && 
-             currentView !== AppView.NOTIFICATIONS && (
+            {currentView !== AppView.VISION && (
                 <Navigation currentView={currentView} onNavigate={setCurrentView} />
             )}
         </div>

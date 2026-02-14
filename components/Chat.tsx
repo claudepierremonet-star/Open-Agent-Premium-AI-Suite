@@ -6,9 +6,9 @@ import { GoogleGenAI } from "@google/genai";
 
 export const Chat: React.FC = () => {
     const [threads, setThreads] = useState<ChatThread[]>([
-        { id: 't1', title: 'React Component Opt...', lastMessage: 'Can you refactor this hook...', timestamp: '2m ago', isPinned: true, modelId: 'gemini' },
-        { id: 't2', title: 'Marketing Copy - V2', lastMessage: 'Here is a revised version...', timestamp: '1h ago', isPinned: false, modelId: 'perplexity' },
-        { id: 't3', title: 'Q3 Revenue Breakdown', lastMessage: 'Based on the uploaded CSV...', timestamp: 'Yesterday', isPinned: false, modelId: 'deepseek' }
+        { id: 't1', title: 'Optimisation React', lastMessage: 'Refactorisation du hook...', timestamp: '2m ago', isPinned: true, modelId: 'gemini' },
+        { id: 't2', title: 'Copywriting Marketing', lastMessage: 'Voici la version révisée...', timestamp: '1h ago', isPinned: false, modelId: 'perplexity' },
+        { id: 't3', title: 'Analyse Revenus Q3', lastMessage: 'Selon le CSV importé...', timestamp: 'Yesterday', isPinned: false, modelId: 'deepseek' }
     ]);
 
     const [activeThreadId, setActiveThreadId] = useState('t1');
@@ -82,7 +82,7 @@ export const Chat: React.FC = () => {
         const newThread: ChatThread = {
             id: newId,
             title: 'Nouvelle discussion',
-            lastMessage: 'En attente du premier message...',
+            lastMessage: 'En attente...',
             timestamp: 'Maintenant',
             isPinned: false,
             modelId: selectedModel.id
@@ -101,28 +101,20 @@ export const Chat: React.FC = () => {
 
     const getSystemInstruction = (modelId: string) => {
         let instruction = "";
-        
         switch(modelId) {
-            case 'perplexity': instruction = "Tu es Perplexity. Ta force est la recherche web ultra-précise. Cite toujours tes sources."; break;
-            case 'deepseek': instruction = "Tu es DeepSeek R1. Expert en raisonnement logique et programmation."; break;
-            case 'grok': instruction = "Tu es Grok. Direct, plein d'esprit, très honête."; break;
-            default: instruction = "Tu es Gemini 3 Pro, un assistant IA généraliste de pointe.";
+            case 'perplexity': instruction = "Tu es Perplexity. Recherche web précise. Cite sources."; break;
+            case 'deepseek': instruction = "Tu es DeepSeek R1. Expert logique."; break;
+            case 'grok': instruction = "Tu es Grok. Direct et honnête."; break;
+            default: instruction = "Tu es Gemini 3 Pro.";
         }
-
-        if (activePersona?.tone === 'professional') {
-            instruction += " TU ES EN MODE PROFESSIONAL EXPERT. Structure tes réponses avec une analyse, des recommandations et sois très formel.";
-        } else if (activePersona?.tone === 'casual') {
-            instruction += " TU ES EN MODE CASUAL / BUDDY. Parle de manière détendue, utilise le 'tu', sois chaleureux, utilise des emojis et évite le jargon complexe.";
-        } else if (activePersona?.tone === 'creative') {
-            instruction += " TU ES EN MODE CREATIVE EXPLORER. Ta mission est de repousser les limites de l'imagination. Utilise des métaphores audacieuses, propose des solutions disruptives et n'hésite pas à explorer des concepts abstraits ou futuristes. Sois visionnaire et poétique.";
-        }
-
+        if (activePersona?.tone === 'professional') instruction += " MODE EXPERT. Formel et structuré.";
+        else if (activePersona?.tone === 'casual') instruction += " MODE RELAX. Chaleureux et emojis.";
+        else if (activePersona?.tone === 'creative') instruction += " MODE VISIONNAIRE. Disruptif et poétique.";
         return instruction;
     };
 
     const handleSend = async () => {
         if (!input.trim() || isThinking) return;
-        
         const userText = input.trim();
         setInput('');
         if (isListening) recognitionRef.current?.stop();
@@ -138,8 +130,6 @@ export const Chat: React.FC = () => {
 
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            
-            // Adjust temperature based on creativity setting
             const baseTemp = activePersona?.tone === 'creative' ? 0.9 : 0.7;
             const finalTemp = activePersona ? (activePersona.creativity / 100) * baseTemp + 0.1 : 0.7;
 
@@ -156,7 +146,7 @@ export const Chat: React.FC = () => {
             const aiMsg: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: response.text || "Désolé, je n'ai pas pu générer de réponse.",
+                content: response.text || "Erreur de génération.",
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 model: selectedModel.name
             };
@@ -171,163 +161,160 @@ export const Chat: React.FC = () => {
 
         } catch (error) {
             console.error("Chat Error:", error);
-            const errorMsg: ChatMessage = {
+            setMessages(prev => [...prev, {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 content: "Erreur de connexion. Veuillez réessayer.",
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-            setMessages(prev => [...prev, errorMsg]);
+            }]);
         } finally {
             setIsThinking(false);
         }
     };
 
-    const getAccentColor = () => {
-        if (activePersona?.tone === 'professional') return 'border-primary/50';
-        if (activePersona?.tone === 'casual') return 'border-amber-500/50';
-        if (activePersona?.tone === 'creative') return 'border-purple-500/50';
-        return 'border-white/5';
-    };
-
-    const getButtonColor = () => {
+    const getToneColor = () => {
         if (activePersona?.tone === 'casual') return 'bg-amber-500';
         if (activePersona?.tone === 'creative') return 'bg-purple-600';
         return 'bg-primary';
     };
 
+    const getToneText = () => {
+        if (activePersona?.tone === 'casual') return 'text-amber-600';
+        if (activePersona?.tone === 'creative') return 'text-purple-600';
+        return 'text-primary';
+    };
+
+    const getToneBorder = () => {
+        if (activePersona?.tone === 'casual') return 'border-amber-500/30';
+        if (activePersona?.tone === 'creative') return 'border-purple-600/30';
+        return 'border-primary/30';
+    };
+
     return (
-        <div className={`flex flex-col h-full bg-background-dark relative overflow-hidden border-t-2 transition-all duration-700 ${getAccentColor()}`}>
-            {/* Custom Header */}
-            <header className="px-6 py-4 border-b border-white/5 glass sticky top-0 z-40 flex items-center justify-between">
+        <div className={`flex flex-col h-full bg-stellar relative overflow-hidden transition-all duration-700`}>
+            {/* Header Haute Visibilité */}
+            <header className="px-6 py-4 border-b-2 border-intl-border bg-white sticky top-0 z-40 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={() => setShowChatList(true)}
-                        className="size-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"
+                        className="size-11 rounded-xl bg-white border-2 border-intl-border flex items-center justify-center hover:bg-stellar hover:border-graphite/20 transition-all shadow-sm"
                     >
-                        <span className="material-symbols-outlined text-white/70">forum</span>
+                        <span className="material-symbols-outlined text-graphite font-bold">forum</span>
                     </button>
                     <div className="flex items-center gap-2">
-                        <div className={`size-8 rounded-lg ${selectedModel.bgColor} flex items-center justify-center`}>
-                            <span className={`material-symbols-outlined ${selectedModel.color} text-[16px]`}>
+                        <div className={`size-9 rounded-xl ${selectedModel.bgColor} flex items-center justify-center border border-white/20`}>
+                            <span className={`material-symbols-outlined ${selectedModel.color} text-[20px] font-bold`}>
                                 {selectedModel.icon}
                             </span>
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold truncate max-w-[120px] leading-tight">
+                            <h2 className="text-sm font-black text-graphite truncate max-w-[140px] leading-tight uppercase tracking-tight">
                                 {threads.find(t => t.id === activeThreadId)?.title || selectedModel.name}
                             </h2>
                             <button 
                                 onClick={() => setShowModelHub(!showModelHub)}
-                                className={`text-[9px] font-bold uppercase tracking-widest flex items-center gap-1 hover:opacity-70 transition-colors ${activePersona?.tone === 'casual' ? 'text-amber-500' : activePersona?.tone === 'creative' ? 'text-purple-400' : 'text-white/30'}`}
+                                className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:opacity-70 transition-colors ${getToneText()}`}
                             >
-                                {selectedModel.name} <span className="material-symbols-outlined text-[10px]">expand_more</span>
+                                {selectedModel.name} <span className="material-symbols-outlined text-[14px] font-bold">expand_more</span>
                             </button>
                         </div>
                     </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    {activePersona?.tone === 'professional' && (
-                        <div className="px-2 py-1 rounded-md bg-primary/10 border border-primary/20 text-[8px] font-black text-primary uppercase animate-pulse">
-                            Expert Active
-                        </div>
-                    )}
-                    {activePersona?.tone === 'casual' && (
-                        <div className="px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-[8px] font-black text-amber-500 uppercase animate-pulse">
-                            Buddy Active
-                        </div>
-                    )}
-                    {activePersona?.tone === 'creative' && (
-                        <div className="px-2 py-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-[8px] font-black text-purple-400 uppercase animate-pulse">
-                            Vision Active
+                    {activePersona?.tone && (
+                        <div className={`px-3 py-1.5 rounded-full border-2 bg-white ${getToneBorder()} ${getToneText()} text-[9px] font-black uppercase tracking-widest hidden sm:block shadow-sm`}>
+                            {activePersona.tone} MODE
                         </div>
                     )}
                     <button 
                         onClick={(e) => togglePin(activeThreadId, e)}
-                        className={`size-8 rounded-lg flex items-center justify-center transition-all ${threads.find(t => t.id === activeThreadId)?.isPinned ? `${activePersona?.tone === 'casual' ? 'bg-amber-500/20 text-amber-500 border-amber-500/20' : activePersona?.tone === 'creative' ? 'bg-purple-500/20 text-purple-400 border-purple-500/20' : 'bg-primary/20 text-primary border-primary/20'}` : 'bg-white/5 border border-white/10'}`}
+                        className={`size-11 rounded-xl border-2 flex items-center justify-center transition-all shadow-sm ${threads.find(t => t.id === activeThreadId)?.isPinned ? `${getToneColor()} text-white border-transparent` : 'bg-white border-intl-border text-graphite/40'}`}
                     >
-                        <span className={`material-symbols-outlined text-[18px] ${threads.find(t => t.id === activeThreadId)?.isPinned ? 'fill-1' : ''}`}>push_pin</span>
+                        <span className={`material-symbols-outlined text-[20px] font-bold ${threads.find(t => t.id === activeThreadId)?.isPinned ? 'fill-1' : ''}`}>push_pin</span>
                     </button>
                 </div>
             </header>
 
-            {/* Conversation List Drawer */}
+            {/* Conversation List Drawer (Light Theme) */}
             {showChatList && (
                 <div className="absolute inset-0 z-[60] flex">
-                    <div className="w-[85%] h-full bg-background-dark/95 backdrop-blur-3xl border-r border-white/10 flex flex-col shadow-2xl animate-in slide-in-from-left duration-300">
-                        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                    <div className="w-[85%] h-full bg-white flex flex-col shadow-2xl animate-in slide-in-from-left duration-300 border-r-2 border-intl-border">
+                        <div className="p-6 border-b-2 border-intl-border flex items-center justify-between">
                             <div>
-                                <h3 className="text-sm font-bold">Conversations</h3>
-                                <p className="text-[9px] text-white/30 font-bold uppercase tracking-widest">Organize your thoughts</p>
+                                <h3 className="text-lg font-black text-graphite tracking-tighter">DISCUSSIONS</h3>
+                                <p className="text-[10px] text-graphite/40 font-black uppercase tracking-widest">Premium Session History</p>
                             </div>
-                            <button onClick={() => setShowChatList(false)} className="size-8 rounded-full bg-white/5 flex items-center justify-center">
-                                <span className="material-symbols-outlined text-sm text-white/40">arrow_back</span>
+                            <button onClick={() => setShowChatList(false)} className="size-10 rounded-full bg-stellar border border-intl-border flex items-center justify-center">
+                                <span className="material-symbols-outlined text-graphite/40 font-bold">arrow_back</span>
                             </button>
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-stellar/30">
                             <button 
                                 onClick={handleNewChat}
-                                className={`w-full p-3 mb-2 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all ${getButtonColor()}`}
+                                className={`w-full p-4 mb-2 rounded-2xl text-white font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all ${getToneColor()}`}
                             >
-                                <span className="material-symbols-outlined text-sm">add</span>
-                                Nouvelle discussion
+                                <span className="material-symbols-outlined text-lg">add</span>
+                                Nouveau Chat
                             </button>
 
                             {sortedThreads.map(thread => (
                                 <button 
                                     key={thread.id}
                                     onClick={() => { setActiveThreadId(thread.id); setShowChatList(false); }}
-                                    className={`w-full p-3 rounded-2xl flex items-center gap-3 text-left transition-all border ${
+                                    className={`w-full p-4 rounded-3xl flex items-center gap-4 text-left transition-all border-2 ${
                                         activeThreadId === thread.id 
-                                            ? 'bg-white/10 border-white/10 shadow-sm' 
-                                            : 'bg-transparent border-transparent hover:bg-white/5'
+                                            ? `bg-white ${getToneBorder()} shadow-lg` 
+                                            : 'bg-transparent border-transparent hover:bg-white hover:border-intl-border'
                                     }`}
                                 >
-                                    <div className="size-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0">
-                                        <span className={`material-symbols-outlined text-lg ${activePersona?.tone === 'casual' ? 'text-amber-500/60' : activePersona?.tone === 'creative' ? 'text-purple-400/60' : 'text-primary/60'}`}>chat_bubble</span>
+                                    <div className="size-12 rounded-2xl bg-white border-2 border-intl-border flex items-center justify-center shrink-0 shadow-sm">
+                                        <span className={`material-symbols-outlined text-2xl ${getToneText()}`}>chat_bubble</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-1 mb-0.5">
-                                            <span className="text-xs font-bold text-white truncate">{thread.title}</span>
-                                            {thread.isPinned && <span className={`material-symbols-outlined text-[12px] fill-1 ${activePersona?.tone === 'casual' ? 'text-amber-500' : activePersona?.tone === 'creative' ? 'text-purple-400' : 'text-primary'}`}>push_pin</span>}
+                                        <div className="flex items-center justify-between gap-1 mb-1">
+                                            <span className="text-sm font-black text-graphite truncate">{thread.title}</span>
+                                            {thread.isPinned && <span className={`material-symbols-outlined text-[14px] fill-1 ${getToneText()}`}>push_pin</span>}
                                         </div>
-                                        <p className="text-[10px] text-white/30 truncate">{thread.lastMessage}</p>
+                                        <p className="text-[11px] text-graphite/50 font-bold truncate tracking-tight">{thread.lastMessage}</p>
                                     </div>
                                 </button>
                             ))}
                         </div>
                     </div>
-                    <div className="flex-1 bg-black/20" onClick={() => setShowChatList(false)}></div>
+                    <div className="flex-1 bg-graphite/20 backdrop-blur-sm" onClick={() => setShowChatList(false)}></div>
                 </div>
             )}
 
-            {/* Model Hub Overlay */}
+            {/* Model Hub Overlay (Light Theme) */}
             {showModelHub && (
-                <div className="absolute top-[65px] inset-x-0 bottom-0 z-50 bg-background-dark/98 backdrop-blur-3xl border-b border-white/10 flex flex-col animate-in slide-in-from-top-4 duration-300">
-                    <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Moteur Intelligence Artificielle</h3>
-                            <button onClick={() => setShowModelHub(false)} className="size-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                                <span className="material-symbols-outlined text-sm text-white/40">close</span>
+                <div className="absolute top-[75px] inset-x-0 bottom-0 z-50 bg-stellar/95 backdrop-blur-xl border-b-2 border-intl-border flex flex-col animate-in slide-in-from-top-4 duration-300">
+                    <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-graphite/40">Sélecteur de Moteur Neural</h3>
+                            <button onClick={() => setShowModelHub(false)} className="size-10 rounded-full bg-white border border-intl-border flex items-center justify-center hover:bg-stellar transition-colors">
+                                <span className="material-symbols-outlined text-graphite/60">close</span>
                             </button>
                         </div>
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {MODELS.map((m) => (
                                 <button 
                                     key={m.id}
                                     onClick={() => { setSelectedModel(m); setShowModelHub(false); }}
-                                    className={`flex items-start gap-4 p-4 rounded-2xl border transition-all text-left group ${
+                                    className={`flex items-center gap-5 p-5 rounded-[2rem] border-2 transition-all text-left group bg-white ${
                                         selectedModel.id === m.id 
-                                            ? `bg-white/10 ${activePersona?.tone === 'casual' ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : activePersona?.tone === 'creative' ? 'border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'border-primary shadow-neon-strong'}` 
-                                            : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                            ? `${getToneBorder()} shadow-2xl scale-[1.02]` 
+                                            : 'border-intl-border hover:border-graphite/20 hover:shadow-lg'
                                     }`}
                                 >
-                                    <div className={`size-12 rounded-xl shrink-0 flex items-center justify-center ${m.bgColor} border border-white/5 group-hover:border-white/20 transition-all`}>
-                                        <span className={`material-symbols-outlined ${m.color} text-2xl`}>{m.icon}</span>
+                                    <div className={`size-14 rounded-2xl shrink-0 flex items-center justify-center ${m.bgColor} border border-white/40 shadow-sm group-hover:scale-110 transition-transform`}>
+                                        <span className={`material-symbols-outlined ${m.color} text-3xl font-bold`}>{m.icon}</span>
                                     </div>
-                                    <div className="flex-1 min-w-0 text-sm font-bold text-white">{m.name}</div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-black text-graphite uppercase tracking-widest">{m.name}</div>
+                                        <p className="text-[10px] text-graphite/40 font-bold leading-tight mt-1">{m.description}</p>
+                                    </div>
                                 </button>
                             ))}
                         </div>
@@ -336,56 +323,66 @@ export const Chat: React.FC = () => {
             )}
 
             {/* Messages Area */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] flex flex-col gap-1.5 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[88%] flex flex-col gap-2 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                             {msg.role === 'assistant' && (
-                                <div className="flex items-center gap-1.5 ml-1">
-                                    <span className={`text-[9px] font-bold uppercase tracking-wider ${activePersona?.tone === 'casual' ? 'text-amber-500/60' : activePersona?.tone === 'creative' ? 'text-purple-400/60' : 'text-white/40'}`}>{msg.model || 'Open Agent'}</span>
+                                <div className="flex items-center gap-2 ml-2">
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${getToneText()}`}>{msg.model || 'Premium Suite'}</span>
+                                    <div className="size-1.5 rounded-full bg-intl-border"></div>
+                                    <span className="text-[10px] text-graphite/20 font-black">{msg.timestamp}</span>
                                 </div>
                             )}
-                            <div className={`px-4 py-3 rounded-2xl text-[14px] leading-relaxed border transition-all duration-700 ${
+                            <div className={`px-6 py-4 rounded-[1.8rem] text-[15px] font-bold leading-relaxed border-2 transition-all duration-700 shadow-sm ${
                                 msg.role === 'user' 
-                                    ? `${getButtonColor()} shadow-lg border-transparent text-white rounded-tr-none` 
-                                    : `bg-surface-dark/60 border-white/5 text-white/90 rounded-tl-none shadow-sm ${activePersona?.tone === 'creative' ? 'shadow-[0_0_10px_rgba(168,85,247,0.1)]' : ''}`
+                                    ? `${getToneColor()} border-transparent text-white rounded-tr-none shadow-xl` 
+                                    : `bg-white border-intl-border text-graphite rounded-tl-none`
                             }`}>
                                 {msg.content}
                             </div>
-                            <span className="text-[9px] text-white/20">{msg.timestamp}</span>
+                            {msg.role === 'user' && (
+                                <span className="text-[10px] text-graphite/20 font-black mr-2">{msg.timestamp}</span>
+                            )}
                         </div>
                     </div>
                 ))}
                 {isThinking && (
-                    <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl w-fit border border-white/5 animate-pulse">
-                        <div className="relative size-4">
-                            <div className={`absolute inset-0 border-2 rounded-full opacity-20 ${activePersona?.tone === 'casual' ? 'border-amber-500' : activePersona?.tone === 'creative' ? 'border-purple-500' : 'border-primary'}`}></div>
-                            <div className={`absolute inset-0 border-2 border-t-transparent rounded-full animate-spin ${activePersona?.tone === 'casual' ? 'border-amber-500' : activePersona?.tone === 'creative' ? 'border-purple-500' : 'border-primary'}`}></div>
+                    <div className="flex items-center gap-4 p-4 bg-white rounded-2xl w-fit border-2 border-intl-border shadow-sm animate-pulse ml-2">
+                        <div className="relative size-6">
+                            <div className={`absolute inset-0 border-3 rounded-full opacity-20 ${getToneColor()}`}></div>
+                            <div className={`absolute inset-0 border-3 border-t-transparent rounded-full animate-spin ${getToneColor()}`}></div>
                         </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest italic ${activePersona?.tone === 'casual' ? 'text-amber-500/60' : activePersona?.tone === 'creative' ? 'text-purple-400/60' : 'text-white/40'}`}>{selectedModel.name} réfléchit...</span>
+                        <span className={`text-[11px] font-black uppercase tracking-[0.2em] italic ${getToneText()}`}>{selectedModel.name} ANALYSE...</span>
                     </div>
                 )}
             </div>
 
-            {/* Input Area */}
-            <footer className="p-4 bg-background-dark/95 border-t border-white/5">
-                <div className="max-w-4xl mx-auto space-y-3">
-                    <div className={`bg-white/5 rounded-2xl p-2 flex items-end gap-2 border transition-all shadow-inner ${activePersona?.tone === 'casual' ? 'focus-within:border-amber-500/50' : activePersona?.tone === 'creative' ? 'focus-within:border-purple-500/50' : 'focus-within:border-primary/50'} border-white/10`}>
+            {/* Input Area Haute Visibilité */}
+            <footer className="p-6 bg-white border-t-2 border-intl-border pb-10">
+                <div className="max-w-4xl mx-auto">
+                    <div className={`bg-stellar rounded-[2rem] p-3 flex items-end gap-3 border-2 transition-all shadow-inner group focus-within:bg-white focus-within:shadow-2xl ${getToneBorder()} bg-white`}>
                         <textarea 
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-white text-[14px] py-2.5 resize-none max-h-32 placeholder:text-white/20 px-3" 
-                            placeholder={`Message pour ${selectedModel.name}...`} 
+                            className="flex-1 bg-transparent border-none focus:ring-0 text-graphite text-[15px] font-bold py-3 resize-none max-h-40 placeholder:text-graphite/20 px-5" 
+                            placeholder={`Expliquez votre concept à ${selectedModel.name}...`} 
                             rows={1}
                         />
-                        <div className="flex items-center gap-1 pb-1 pr-1">
+                        <div className="flex items-center gap-2 pb-2 pr-2">
+                            <button 
+                                onClick={toggleListening}
+                                className={`size-12 rounded-2xl flex items-center justify-center transition-all border-2 ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse' : 'bg-white border-intl-border text-graphite/40 hover:text-graphite'}`}
+                            >
+                                <span className="material-symbols-outlined font-bold">{isListening ? 'mic_off' : 'mic'}</span>
+                            </button>
                             <button 
                                 onClick={handleSend}
                                 disabled={isThinking || !input.trim()}
-                                className={`text-white size-11 rounded-xl flex items-center justify-center transition-all shadow-lg disabled:opacity-30 disabled:shadow-none ${getButtonColor()}`}
+                                className={`text-white size-12 rounded-2xl flex items-center justify-center transition-all shadow-xl disabled:opacity-20 disabled:shadow-none hover:scale-110 active:scale-95 ${getToneColor()}`}
                             >
-                                <span className="material-symbols-outlined">arrow_upward</span>
+                                <span className="material-symbols-outlined font-bold">arrow_upward</span>
                             </button>
                         </div>
                     </div>
