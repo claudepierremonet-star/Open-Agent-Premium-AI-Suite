@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Open Agent</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2957ff",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#0a0a0b",
+                        "surface-dark": "#161b2c",
+                        "border-dark": "#272b3a"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'neon': '0 0 15px rgba(41, 87, 255, 0.4)',
+                        'neon-strong': '0 0 25px rgba(41, 87, 255, 0.6)',
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(22, 27, 44, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(41, 87, 255, 0.1); }
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 18px; height: 18px; background: #ffffff; border-radius: 50%; border: 2px solid #2957ff; box-shadow: 0 0 10px rgba(41, 87, 255, 0.5);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
+    "recharts": "https://esm.sh/recharts@2.12.7"
+  }
+}
+</script>
+</head>
+<body class="bg-background-dark text-white font-display min-h-screen">
+    <div id="root"></div>
+</body>
+</html>

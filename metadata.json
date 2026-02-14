@@ -1,0 +1,9 @@
+{
+  "name": "Open Agent - Premium AI Suite",
+  "description": "A comprehensive AI assistant featuring behavior tuning, real-time translation history, AR-powered vision analysis, and multi-model chat integration.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
