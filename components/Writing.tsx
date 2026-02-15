@@ -26,9 +26,6 @@ export const Writing: React.FC<WritingProps> = ({ onOpenCanva }) => {
     const [showStatus, setShowStatus] = useState<'download' | 'share' | null>(null);
     
     const [exportFormat, setExportFormat] = useState<'png' | 'jpg' | 'svg'>('png');
-    const [jpgQuality, setJpgQuality] = useState(0.8);
-    const [showExportOptions, setShowExportOptions] = useState(false);
-
     const [strokes, setStrokes] = useState<Stroke[]>([]);
     const [redoStrokes, setRedoStrokes] = useState<Stroke[]>([]);
     const currentStroke = useRef<Point[]>([]);
@@ -190,8 +187,44 @@ export const Writing: React.FC<WritingProps> = ({ onOpenCanva }) => {
     };
 
     const handleShare = async () => {
-        setShowStatus('share');
-        setTimeout(() => setShowStatus(null), 2000);
+        if (!navigator.share) {
+            alert("Le partage n'est pas supporté sur ce navigateur.");
+            return;
+        }
+
+        try {
+            if (mode === 'text') {
+                await navigator.share({
+                    title: title,
+                    text: content,
+                    url: window.location.href
+                });
+            } else if (canvasRef.current) {
+                const canvas = canvasRef.current;
+                canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        const file = new File([blob], `${title.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+                        const shareData: ShareData = {
+                            title: title,
+                            text: 'Mon croquis via Open Agent',
+                        };
+                        
+                        // Check if file sharing is supported
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            shareData.files = [file];
+                        }
+
+                        await navigator.share(shareData);
+                    }
+                });
+            }
+            setShowStatus('share');
+            setTimeout(() => setShowStatus(null), 2000);
+        } catch (error) {
+            if ((error as Error).name !== 'AbortError') {
+                console.error('Erreur lors du partage:', error);
+            }
+        }
     };
 
     const handleOpenInCanva = () => {
@@ -249,7 +282,8 @@ export const Writing: React.FC<WritingProps> = ({ onOpenCanva }) => {
                             <button onClick={clearCanvas} className="size-9 rounded-lg bg-white border border-intl-border flex items-center justify-center hover:bg-red-50 text-red-500 transition-all shadow-sm"><span className="material-symbols-outlined text-[20px] font-bold">delete</span></button>
                         </div>
                     )}
-                    <button onClick={handleDownload} className={`size-11 rounded-xl border-2 transition-all flex items-center justify-center shadow-sm ${showStatus === 'download' ? 'bg-green-500 border-green-600 text-white' : 'bg-white border-intl-border text-graphite'}`}><span className="material-symbols-outlined font-bold">download</span></button>
+                    <button onClick={handleDownload} className={`size-11 rounded-xl border-2 transition-all flex items-center justify-center shadow-sm ${showStatus === 'download' ? 'bg-green-500 border-green-600 text-white' : 'bg-white border-intl-border text-graphite'}`} title="Télécharger"><span className="material-symbols-outlined font-bold">download</span></button>
+                    <button onClick={handleShare} className={`size-11 rounded-xl border-2 transition-all flex items-center justify-center shadow-sm ${showStatus === 'share' ? 'bg-primary border-primary text-white' : 'bg-white border-intl-border text-graphite'}`} title="Partager"><span className="material-symbols-outlined font-bold">share</span></button>
                 </div>
             </header>
 

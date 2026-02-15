@@ -5,7 +5,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 interface CanvasElement {
     id: string;
     type: 'text' | 'image' | 'shape' | 'sketch';
-    content: string;
+    content: string; // Pour shape: 'rect' | 'circle' | 'line'
     x: number;
     y: number;
     width: number;
@@ -24,16 +24,25 @@ interface CanvaProps {
     onBack: () => void;
 }
 
+const TEXTURES = [
+    { id: 'none', label: 'Uni', icon: 'texture' },
+    { id: 'grid', label: 'Grille', icon: 'grid_on' },
+    { id: 'dots', label: 'Points', icon: 'blur_on' },
+    { id: 'paper', label: 'Papier', icon: 'description' },
+    { id: 'carbon', label: 'Carbone', icon: 'view_quilt' },
+    { id: 'neural', label: 'Neural', icon: 'hub' }
+];
+
 export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
     const [elements, setElements] = useState<CanvasElement[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [canvasBg, setCanvasBg] = useState('#1C1C1E');
-    const [bgTexture, setBgTexture] = useState<string | null>(null);
+    const [activeTexture, setActiveTexture] = useState<string>('none');
     const containerRef = useRef<HTMLDivElement>(null);
     
     // UI State
-    const [activeSidebar, setActiveSidebar] = useState<'text' | 'assets' | 'layers' | null>(null);
+    const [activeSidebar, setActiveSidebar] = useState<'text' | 'assets' | 'layers' | 'bg' | null>(null);
     const [showExportPanel, setShowExportPanel] = useState(false);
     const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
     const [exportScale, setExportScale] = useState(2);
@@ -75,16 +84,16 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
         setActiveSidebar(null);
     };
 
-    const addShape = (shapeType: string) => {
+    const addShape = (shapeType: 'rect' | 'circle' | 'line') => {
         const newEl: CanvasElement = {
             id: Date.now().toString(),
             type: 'shape',
             content: shapeType,
             x: 100,
             y: 200,
-            width: 150,
-            height: 150,
-            color: '#FF4F00',
+            width: shapeType === 'line' ? 200 : 150,
+            height: shapeType === 'line' ? 4 : 150,
+            color: shapeType === 'line' ? '#FFFFFF' : '#FF4F00',
             rotation: 0,
             opacity: 0.8,
             zIndex: getNextZIndex()
@@ -148,6 +157,70 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
         window.addEventListener('touchend', onUp);
     };
 
+    const handleElementResize = (id: string, handle: string, e: React.MouseEvent | React.TouchEvent) => {
+        e.stopPropagation();
+        const el = elements.find(item => item.id === id);
+        if (!el) return;
+
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        
+        const startX = clientX;
+        const startY = clientY;
+        const origW = el.width;
+        const origH = el.height;
+        const origX = el.x;
+        const origY = el.y;
+
+        const onMove = (moveEvent: MouseEvent | TouchEvent) => {
+            const curX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+            const curY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
+            
+            const dx = curX - startX;
+            const dy = curY - startY;
+
+            setElements(prev => prev.map(item => {
+                if (item.id !== id) return item;
+                
+                let newW = origW;
+                let newH = origH;
+                let newX = origX;
+                let newY = origY;
+
+                if (handle.includes('right')) newW = Math.max(10, origW + dx);
+                if (handle.includes('bottom')) newH = Math.max(10, origH + dy);
+                if (handle.includes('left')) {
+                    const possibleW = origW - dx;
+                    if (possibleW > 10) {
+                        newW = possibleW;
+                        newX = origX + dx;
+                    }
+                }
+                if (handle.includes('top')) {
+                    const possibleH = origH - dy;
+                    if (possibleH > 10) {
+                        newH = possibleH;
+                        newY = origY + dy;
+                    }
+                }
+
+                return { ...item, width: newW, height: newH, x: newX, y: newY };
+            }));
+        };
+
+        const onUp = () => {
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+            window.removeEventListener('touchmove', onMove);
+            window.removeEventListener('touchend', onUp);
+        };
+
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        window.addEventListener('touchmove', onMove);
+        window.addEventListener('touchend', onUp);
+    };
+
     const bringToFront = () => {
         if (!selectedId) return;
         setElements(prev => prev.map(e => e.id === selectedId ? { ...e, zIndex: getNextZIndex() } : e));
@@ -167,8 +240,38 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        // Background
         ctx.fillStyle = canvasBg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Render Texture if not none
+        if (activeTexture !== 'none') {
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            ctx.strokeStyle = canvasBg === '#1C1C1E' ? '#FFFFFF' : '#000000';
+            if (activeTexture === 'grid') {
+                const step = 24 * exportScale;
+                ctx.beginPath();
+                for (let x = 0; x <= canvas.width; x += step) {
+                    ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+                }
+                for (let y = 0; y <= canvas.height; y += step) {
+                    ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+                }
+                ctx.stroke();
+            } else if (activeTexture === 'dots') {
+                const step = 24 * exportScale;
+                for (let x = 0; x <= canvas.width; x += step) {
+                    for (let y = 0; y <= canvas.height; y += step) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, 1 * exportScale, 0, Math.PI * 2);
+                        ctx.fillStyle = ctx.strokeStyle as string;
+                        ctx.fill();
+                    }
+                }
+            }
+            ctx.restore();
+        }
 
         const sorted = [...elements].sort((a, b) => a.zIndex - b.zIndex);
 
@@ -191,8 +294,10 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
                 ctx.fillStyle = el.color || '#FF4F00';
                 if (el.content === 'circle') {
                     ctx.beginPath();
-                    ctx.arc(centerX, centerY, (el.width / 2) * exportScale, 0, Math.PI * 2);
+                    ctx.ellipse(centerX, centerY, (el.width / 2) * exportScale, (el.height / 2) * exportScale, 0, 0, Math.PI * 2);
                     ctx.fill();
+                } else if (el.content === 'line') {
+                    ctx.fillRect(el.x * exportScale, el.y * exportScale, el.width * exportScale, el.height * exportScale);
                 } else {
                     ctx.fillRect(el.x * exportScale, el.y * exportScale, el.width * exportScale, el.height * exportScale);
                 }
@@ -223,6 +328,40 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
     };
 
     const selectedElement = elements.find(e => e.id === selectedId);
+
+    const getBackgroundStyle = () => {
+        const styles: React.CSSProperties = {
+            backgroundColor: canvasBg,
+        };
+
+        const opacity = canvasBg === '#1C1C1E' ? '0.05' : '0.1';
+        const color = canvasBg === '#1C1C1E' ? 'white' : 'black';
+
+        switch (activeTexture) {
+            case 'grid':
+                styles.backgroundImage = `linear-gradient(${color} 1px, transparent 1px), linear-gradient(90deg, ${color} 1px, transparent 1px)`;
+                styles.backgroundSize = '24px 24px';
+                // Removed non-existent property backgroundOpacity to fix TS error
+                break;
+            case 'dots':
+                styles.backgroundImage = `radial-gradient(${color} 1px, transparent 1px)`;
+                styles.backgroundSize = '24px 24px';
+                break;
+            case 'paper':
+                styles.backgroundImage = `url("https://www.transparenttextures.com/patterns/natural-paper.png")`;
+                break;
+            case 'carbon':
+                styles.backgroundImage = `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")`;
+                break;
+            case 'neural':
+                styles.backgroundImage = `url("https://www.transparenttextures.com/patterns/circuit-board.png")`;
+                break;
+            default:
+                break;
+        }
+
+        return styles;
+    };
 
     return (
         <div className="flex flex-col h-full bg-[#121214] relative overflow-hidden font-display">
@@ -261,16 +400,17 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
                         <span className="material-symbols-outlined">category</span>
                     </button>
                     <button 
+                        onClick={() => setActiveSidebar(activeSidebar === 'bg' ? null : 'bg')}
+                        className={`size-10 rounded-xl flex items-center justify-center transition-all ${activeSidebar === 'bg' ? 'bg-primary text-white shadow-lg' : 'text-white/30 hover:text-white'}`}
+                    >
+                        <span className="material-symbols-outlined">palette</span>
+                    </button>
+                    <button 
                         onClick={() => setActiveSidebar(activeSidebar === 'layers' ? null : 'layers')}
                         className={`size-10 rounded-xl flex items-center justify-center transition-all ${activeSidebar === 'layers' ? 'bg-primary text-white shadow-lg' : 'text-white/30 hover:text-white'}`}
                     >
                         <span className="material-symbols-outlined">layers</span>
                     </button>
-                    <div className="mt-auto">
-                        <button onClick={() => setCanvasBg(canvasBg === '#1C1C1E' ? '#FBFBFB' : '#1C1C1E')} className="size-10 rounded-xl text-white/30 hover:text-white flex items-center justify-center">
-                            <span className="material-symbols-outlined">palette</span>
-                        </button>
-                    </div>
                 </aside>
 
                 {/* Sub-Sidebar Panels */}
@@ -286,18 +426,42 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
                         )}
                         {activeSidebar === 'assets' && (
                             <div className="space-y-6">
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40">Neural Assets</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40">Outils de Formes</h3>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => addShape('square')} className="aspect-square rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:border-primary group transition-all">
-                                        <div className="size-8 bg-white/20 group-hover:bg-primary/40 rounded-sm"></div>
+                                    <button onClick={() => addShape('rect')} className="aspect-square rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center hover:border-primary group transition-all p-2">
+                                        <div className="size-10 border-2 border-white/40 group-hover:border-primary/60 rounded-sm"></div>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-white/20 mt-2">Rectangle</span>
                                     </button>
-                                    <button onClick={() => addShape('circle')} className="aspect-square rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:border-primary group transition-all">
-                                        <div className="size-8 bg-white/20 group-hover:bg-primary/40 rounded-full"></div>
+                                    <button onClick={() => addShape('circle')} className="aspect-square rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center hover:border-primary group transition-all p-2">
+                                        <div className="size-10 border-2 border-white/40 group-hover:border-primary/60 rounded-full"></div>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-white/20 mt-2">Cercle</span>
+                                    </button>
+                                    <button onClick={() => addShape('line')} className="aspect-square rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center hover:border-primary group transition-all p-2 col-span-2">
+                                        <div className="w-20 h-1 bg-white/40 group-hover:bg-primary/60 rounded-full"></div>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-white/20 mt-2">Ligne Droite</span>
                                     </button>
                                 </div>
-                                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                                    <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-2">Neural Stickers</p>
-                                    <p className="text-[10px] text-white/40 italic">Coming soon: Instant SVG Generation from prompts.</p>
+                            </div>
+                        )}
+                        {activeSidebar === 'bg' && (
+                            <div className="space-y-6">
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40">Environnement</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => setCanvasBg('#1C1C1E')} className={`h-12 rounded-xl border-2 ${canvasBg === '#1C1C1E' ? 'border-primary' : 'border-white/10'} bg-[#1C1C1E] transition-all`}></button>
+                                    <button onClick={() => setCanvasBg('#FBFBFB')} className={`h-12 rounded-xl border-2 ${canvasBg === '#FBFBFB' ? 'border-primary' : 'border-white/10'} bg-[#FBFBFB] transition-all`}></button>
+                                </div>
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40 pt-4">Textures</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {TEXTURES.map(tex => (
+                                        <button 
+                                            key={tex.id}
+                                            onClick={() => setActiveTexture(tex.id)}
+                                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all ${activeTexture === tex.id ? 'bg-primary/10 border-primary text-white' : 'bg-white/5 border-transparent text-white/40'}`}
+                                        >
+                                            <span className="material-symbols-outlined text-2xl">{tex.icon}</span>
+                                            <span className="text-[8px] font-black uppercase tracking-widest">{tex.label}</span>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -323,21 +487,22 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
 
                 {/* Main Viewport */}
                 <div className="flex-1 relative flex items-center justify-center bg-[#0a0a0b] overflow-hidden">
-                    {/* Visual Grid Background */}
-                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-                    
                     <div 
                         ref={containerRef}
                         className="relative shadow-[0_60px_150px_rgba(0,0,0,0.9)] overflow-hidden rounded-[2px] cursor-default group"
                         style={{ 
                             width: '380px', 
                             height: '540px', 
-                            backgroundColor: canvasBg,
-                            backgroundImage: bgTexture ? `url(${bgTexture})` : 'none',
-                            backgroundSize: 'cover'
+                            ...getBackgroundStyle()
                         }}
                         onClick={() => setSelectedId(null)}
                     >
+                        {/* Internal Overlay for Texture Opacity Adjustment if needed */}
+                        <div className="absolute inset-0 pointer-events-none opacity-10" style={{ 
+                            backgroundImage: activeTexture === 'grid' || activeTexture === 'dots' ? getBackgroundStyle().backgroundImage : 'none',
+                            backgroundSize: '24px 24px'
+                        }}></div>
+
                         {elements.map((el) => (
                             <div 
                                 key={el.id}
@@ -354,13 +519,39 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
                                     zIndex: el.zIndex
                                 }}
                             >
-                                {/* Active Selection Border */}
+                                {/* Active Selection Border & Resize Handles */}
                                 {selectedId === el.id && (
                                     <div className="absolute -inset-2 border-2 border-cyan-500 rounded-sm pointer-events-none">
-                                        <div className="absolute -top-1.5 -left-1.5 size-3 bg-cyan-500 rounded-full border-2 border-white shadow-xl"></div>
-                                        <div className="absolute -top-1.5 -right-1.5 size-3 bg-cyan-500 rounded-full border-2 border-white shadow-xl"></div>
-                                        <div className="absolute -bottom-1.5 -left-1.5 size-3 bg-cyan-500 rounded-full border-2 border-white shadow-xl"></div>
-                                        <div className="absolute -bottom-1.5 -right-1.5 size-3 bg-cyan-500 rounded-full border-2 border-white shadow-xl"></div>
+                                        <div 
+                                            onMouseDown={(e) => handleElementResize(el.id, 'top-left', e)}
+                                            onTouchStart={(e) => handleElementResize(el.id, 'top-left', e)}
+                                            className="absolute -top-2 -left-2 size-4 bg-cyan-500 rounded-full border-2 border-white shadow-xl pointer-events-auto cursor-nwse-resize"
+                                        ></div>
+                                        <div 
+                                            onMouseDown={(e) => handleElementResize(el.id, 'top-right', e)}
+                                            onTouchStart={(e) => handleElementResize(el.id, 'top-right', e)}
+                                            className="absolute -top-2 -right-2 size-4 bg-cyan-500 rounded-full border-2 border-white shadow-xl pointer-events-auto cursor-nesw-resize"
+                                        ></div>
+                                        <div 
+                                            onMouseDown={(e) => handleElementResize(el.id, 'bottom-left', e)}
+                                            onTouchStart={(e) => handleElementResize(el.id, 'bottom-left', e)}
+                                            className="absolute -bottom-2 -left-2 size-4 bg-cyan-500 rounded-full border-2 border-white shadow-xl pointer-events-auto cursor-nesw-resize"
+                                        ></div>
+                                        <div 
+                                            onMouseDown={(e) => handleElementResize(el.id, 'bottom-right', e)}
+                                            onTouchStart={(e) => handleElementResize(el.id, 'bottom-right', e)}
+                                            className="absolute -bottom-2 -right-2 size-4 bg-cyan-500 rounded-full border-2 border-white shadow-xl pointer-events-auto cursor-nwse-resize"
+                                        ></div>
+                                        <div 
+                                            onMouseDown={(e) => handleElementResize(el.id, 'right', e)}
+                                            onTouchStart={(e) => handleElementResize(el.id, 'right', e)}
+                                            className="absolute top-1/2 -right-2 -translate-y-1/2 w-2 h-6 bg-cyan-500 rounded-full border-2 border-white shadow-xl pointer-events-auto cursor-ew-resize"
+                                        ></div>
+                                        <div 
+                                            onMouseDown={(e) => handleElementResize(el.id, 'bottom', e)}
+                                            onTouchStart={(e) => handleElementResize(el.id, 'bottom', e)}
+                                            className="absolute bottom-2 left-1/2 -translate-x-1/2 w-6 h-2 bg-cyan-500 rounded-full border-2 border-white shadow-xl pointer-events-auto cursor-ns-resize"
+                                        ></div>
                                     </div>
                                 )}
 
@@ -372,10 +563,10 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
                                             fontFamily: el.fontFamily,
                                             textShadow: '0 2px 4px rgba(0,0,0,0.1)' 
                                         }} 
-                                        className="font-black leading-[0.9] break-words p-1 outline-none"
+                                        className="font-black leading-[0.9] break-words p-1 outline-none w-full h-full flex items-center justify-center text-center"
                                         contentEditable={selectedId === el.id}
                                         suppressContentEditableWarning
-                                        onBlur={(e) => setElements(prev => prev.map(item => item.id === el.id ? { ...item, content: e.target.innerText } : item))}
+                                        onBlur={(e) => setElements(prev => prev.map(item => item.id === el.id ? { ...item, content: (e.target as HTMLElement).innerText } : item))}
                                     >
                                         {el.content}
                                     </div>
@@ -387,14 +578,14 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
                                         style={{ 
                                             backgroundColor: el.color,
                                             borderRadius: el.content === 'circle' ? '100%' : '2px',
-                                            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                                            boxShadow: el.content === 'line' ? 'none' : '0 10px 30px rgba(0,0,0,0.2)'
                                         }}
                                     />
                                 )}
 
                                 {el.type === 'sketch' && (
                                     <div className="w-full h-full pointer-events-none opacity-90 drop-shadow-2xl">
-                                        <svg viewBox={`0 0 ${el.width} ${el.height}`} className="w-full h-full">
+                                        <svg viewBox={`0 0 ${el.width} ${el.height}`} className="w-full h-full" preserveAspectRatio="none">
                                             {el.data?.map((stroke: any, idx: number) => (
                                                 <polyline
                                                     key={idx}
@@ -423,10 +614,14 @@ export const Canva: React.FC<CanvaProps> = ({ initialData, onBack }) => {
                             <button onClick={sendToBack} className="size-9 rounded-lg text-white/50 hover:text-white" title="Reculer"><span className="material-symbols-outlined text-lg">flip_to_back</span></button>
                         </div>
                         <div className="w-px h-6 bg-white/10 mx-1"></div>
-                        {selectedElement.type === 'text' && (
+                        {(selectedElement.type === 'text' || selectedElement.type === 'shape') && (
                             <div className="flex gap-2">
-                                <button onClick={() => setElements(prev => prev.map(e => e.id === selectedId ? { ...e, fontSize: (e.fontSize || 32) + 4 } : e))} className="size-9 rounded-xl bg-white/5 text-white flex items-center justify-center hover:bg-white/10"><span className="material-symbols-outlined text-lg">add</span></button>
-                                <button onClick={() => setElements(prev => prev.map(e => e.id === selectedId ? { ...e, fontSize: Math.max(8, (e.fontSize || 32) - 4) } : e))} className="size-9 rounded-xl bg-white/5 text-white flex items-center justify-center hover:bg-white/10"><span className="material-symbols-outlined text-lg">remove</span></button>
+                                {selectedElement.type === 'text' && (
+                                    <>
+                                        <button onClick={() => setElements(prev => prev.map(e => e.id === selectedId ? { ...e, fontSize: (e.fontSize || 32) + 4 } : e))} className="size-9 rounded-xl bg-white/5 text-white flex items-center justify-center hover:bg-white/10"><span className="material-symbols-outlined text-lg">add</span></button>
+                                        <button onClick={() => setElements(prev => prev.map(e => e.id === selectedId ? { ...e, fontSize: Math.max(8, (e.fontSize || 32) - 4) } : e))} className="size-9 rounded-xl bg-white/5 text-white flex items-center justify-center hover:bg-white/10"><span className="material-symbols-outlined text-lg">remove</span></button>
+                                    </>
+                                )}
                                 <input 
                                     type="color" 
                                     value={selectedElement.color} 

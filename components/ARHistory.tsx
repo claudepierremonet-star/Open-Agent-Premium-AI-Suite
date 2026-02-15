@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { ARHistoryItem } from '../types';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 
 export const ARHistory: React.FC = () => {
     const [history, setHistory] = useState<ARHistoryItem[]>([]);
@@ -41,9 +41,11 @@ export const ARHistory: React.FC = () => {
                 model: "gemini-2.5-flash-preview-tts",
                 contents: [{ parts: [{ text: `Prononce clairement : ${item.translated}` }] }],
                 config: {
-                    responseModalities: ['AUDIO'] as any,
+                    // Correctly use Modality.AUDIO from @google/genai
+                    responseModalities: [Modality.AUDIO],
                     speechConfig: {
                         voiceConfig: {
+                            // Correct voice configuration
                             prebuiltVoiceConfig: { voiceName: 'Kore' },
                         },
                     },

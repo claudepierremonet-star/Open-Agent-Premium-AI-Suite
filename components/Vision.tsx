@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { ARHistoryItem } from '../types';
 
 interface VisionProps {
@@ -115,7 +115,8 @@ export const Vision: React.FC<VisionProps> = ({ onBack }) => {
                 model: "gemini-2.5-flash-preview-tts",
                 contents: [{ parts: [{ text: `Prononce clairement en ${targetLang}: ${text}` }] }],
                 config: {
-                    responseModalities: ['AUDIO'] as any,
+                    // Correctly use Modality.AUDIO from @google/genai
+                    responseModalities: [Modality.AUDIO],
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
                 },
             });

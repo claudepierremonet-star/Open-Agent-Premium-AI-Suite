@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 interface SourceLink {
@@ -169,7 +169,8 @@ export const Analysis: React.FC = () => {
                 model: "gemini-2.5-flash-preview-tts",
                 contents: [{ parts: [{ text: `Read this intelligence report in ${targetLang} with a professional voice: ${text}` }] }],
                 config: {
-                    responseModalities: ['AUDIO'] as any,
+                    // Correctly use Modality.AUDIO from @google/genai
+                    responseModalities: [Modality.AUDIO],
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
                 },
             });
